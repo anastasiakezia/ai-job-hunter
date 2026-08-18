@@ -1,0 +1,8 @@
+﻿node_modules
+.env
+.env.local
+*.log
+sent_jobs.log
+job-matches/
+dist/
+*.tsbuildinfo

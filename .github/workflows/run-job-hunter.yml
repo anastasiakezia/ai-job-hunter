@@ -1,0 +1,37 @@
+﻿name: AI Job Hunter (Every 6h)
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-job-hunter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache sent jobs log
+        uses: actions/cache@v4
+        with:
+          path: sent_jobs.log
+          # Stable key per branch -> reused/overwritten every run so dedup persists across executions
+          key: sent-jobs-${{ github.ref }}
+          restore-keys: |
+            sent-jobs-
+
+      - run: npm ci
+
+      - name: Run AI Job Hunter
+        run: npm start
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DEMO_MODE: ${{ secrets.DEMO_MODE || 'false' }}

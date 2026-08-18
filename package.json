@@ -1,0 +1,30 @@
+{
+  "name": "ai-job-hunter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/genai": "^2.16.0",
+    "axios": "^1.19.0",
+    "cheerio": "^1.2.0",
+    "dotenv": "^17.4.2",
+    "node-telegram-bot-api": "^1.2.0",
+    "openai": "^7.4.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "@types/node-telegram-bot-api": "^0.64.15",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.12",
+    "typescript": "~5.5.4"
+  }
+}
