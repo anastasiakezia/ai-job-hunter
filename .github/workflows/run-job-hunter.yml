@@ -16,6 +16,21 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Debug - Check secrets
+        run: |
+          echo "=== Secrets check ==="
+          echo "GEMINI_API_KEY: ${GEMINI_API_KEY:+SET}"
+          echo "OPENAI_API_KEY: ${OPENAI_API_KEY:+SET}"
+          echo "TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:+SET}"
+          echo "TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:+SET}"
+          echo "DEMO_MODE: ${DEMO_MODE}"
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DEMO_MODE: ${{ secrets.DEMO_MODE || 'false' }}
+
       - name: Cache sent jobs log
         uses: actions/cache@v4
         with:
