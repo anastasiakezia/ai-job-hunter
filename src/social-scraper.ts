@@ -2,7 +2,7 @@
 import * as cheerio from 'cheerio';
 import Parser from 'rss-parser';
 import { JobPosting } from './fetcher';
-import { ENV, MAX_JOB_AGE_HOURS } from './config';
+import { ENV, MAX_JOB_AGE_HOURS, ENGLISH_LEVEL_REJECT_KEYWORDS } from './config';
 
 const rssParser = new Parser();
 const DEFAULT_HEADERS = {
@@ -93,6 +93,12 @@ function isJuniorFriendlyRole(title: string, description: string): boolean {
   const desc = (description || '').toLowerCase();
   const highExpMatch = desc.match(/(?:5|6|7|8|10)\+?\s*(?:years|yrs|tahun)\b/i);
   if (highExpMatch) return false;
+
+  // Reject roles requiring C1/C2/Fluent/Native/Advanced English (candidate is intermediate B1/B2)
+  const englishText = (lowerTitle + " " + desc).toLowerCase();
+  if (ENGLISH_LEVEL_REJECT_KEYWORDS.some((kw) => englishText.includes(kw))) {
+    return false;
+  }
 
   return true;
 }
@@ -500,6 +506,7 @@ export async function fetchSocialRssJobs(): Promise<JobPosting[]> {
         const postedDate = getValidRecentIsoDate(item.isoDate || item.pubDate);
         const text = stripHtml(`${item.title || ''} ${item.contentSnippet || ''} ${item.content || ''}`);
         if (!postedDate || !isRelevantText(text)) continue;
+        if (!isJuniorFriendlyRole(item.title || '', text)) continue;
 
         const link = item.link || feedUrl;
         const isInstagram = /instagram\.com/i.test(link) || /instagram/i.test(sourceName);
@@ -577,6 +584,7 @@ export async function fetchIndonesiaJobRssJobs(): Promise<JobPosting[]> {
         const postedDate = getValidRecentIsoDate(item.isoDate || item.pubDate);
         const text = stripHtml(`${item.title || ''} ${item.contentSnippet || ''} ${item.content || ''}`);
         if (!postedDate || !isRelevantText(text)) continue;
+        if (!isJuniorFriendlyRole(item.title || '', text)) continue;
 
         const link = item.link || feedUrl;
         let company = 'Indonesia Job Board';
@@ -613,6 +621,81 @@ export async function fetchIndonesiaJobRssJobs(): Promise<JobPosting[]> {
 
   return jobs;
 }
+﻿/**
+ * Default RSS/search URLs for local Indonesian IT job boards: Kalibrr,
+ * Tech in Asia, Loker.id, and Karir.id (Google News RSS proxies).
+ */
+function defaultLocalItFeedUrls(): string[] {
+  const keywords = '(backend|fullstack|developer|engineer|laravel|nodejs|typescript|php)';
+  const sites = ['kalibrr.jobs', 'techinasia.com/jobs', 'loker.id', 'karir.id'];
+  return sites.flatMap((site) => {
+    const kw = encodeURIComponent(keywords + ' ' + site);
+    return `https://news.google.com/rss/search?q=${kw}&hl=id&gl=ID&ceid=ID:id`;
+  });
+}
+
+/**
+ * Fetch local Indonesian IT jobs from RSS boards (Kalibrr / Tech in Asia /
+ * Loker.id / Karir.id) and apply pre-filters: recency, tech relevance,
+ * location (Remote/Jogja/Magelang), junior-friendly role, and English level
+ * (reject C1/C2/Fluent/Native/Advanced).
+ */
+export async function fetchLocalItJobs(): Promise<JobPosting[]> {
+  console.log('🇮🇩 Fetching local IT jobs (Kalibrr, Tech in Asia, Loker.id, Karir.id)...');
+
+  const configuredUrls = parseList(ENV.LOCAL_IT_RSS_URLS);
+  const feedUrls = configuredUrls.length > 0 ? configuredUrls : defaultLocalItFeedUrls();
+  const jobs: JobPosting[] = [];
+
+  if (configuredUrls.length === 0) {
+    console.log('   ℹ️ No LOCAL_IT_RSS_URLS configured; using Google News search fallback for local IT boards.');
+  }
+
+  for (const feedUrl of feedUrls) {
+    try {
+      const feed = await rssParser.parseURL(feedUrl);
+      const sourceName = feed.title || new URL(feedUrl).hostname;
+      const items = feed.items || [];
+      console.log(`   Found ${items.length} local IT feed items from ${sourceName}`);
+
+      for (const item of items.slice(0, 12)) {
+        const postedDate = getValidRecentIsoDate(item.isoDate || item.pubDate);
+        const text = stripHtml(`${item.title || ''} ${item.contentSnippet || ''} ${item.content || ''}`);
+        if (!postedDate || !isRelevantText(text)) continue;
+        if (!isJuniorFriendlyRole(item.title || '', text)) continue;
+
+        const allowedLocation = getAllowedTextLocation(text);
+        if (!allowedLocation) continue;
+
+        const link = item.link || feedUrl;
+        let company = 'Local IT Board';
+        if (/kalibrr\.com/i.test(link) || /kalibrr/i.test(sourceName)) company = 'Kalibrr';
+        else if (/techinasia\.com/i.test(link) || /tech in asia/i.test(sourceName)) company = 'Tech in Asia';
+        else if (/loker\.id/i.test(link) || /loker/i.test(sourceName)) company = 'Loker.id';
+        else if (/karir\.id/i.test(link) || /karir/i.test(sourceName)) company = 'Karir.id';
+
+        jobs.push({
+          id: `local-it-${company.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${item.guid || link}`,
+          company,
+          position: item.title || 'Indonesia IT job lead',
+          tags: ['indonesia-local', company.toLowerCase()],
+          location: allowedLocation,
+          url: link,
+          applyUrl: link,
+          description: text,
+          date: postedDate
+        });
+      }
+    } catch (error: any) {
+      console.log(`   ⚠️ Failed local IT job feed ${feedUrl} (${errorSummary(error)})`);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 750));
+  }
+
+  return jobs;
+}
+
 export async function fetchLinkedInJobs(): Promise<JobPosting[]> {
   console.log('🔍 Fetching jobs from LinkedIn RSS feeds...');
   console.log('   ⏭️ Skipping LinkedIn guest HTML results without reliable posting timestamp.');
@@ -622,13 +705,14 @@ export async function fetchLinkedInJobs(): Promise<JobPosting[]> {
 export async function fetchAllJobSources(): Promise<JobPosting[]> {
   console.log('\n📱 SCRAPING VERIFIED-DATE JOB SOURCES ONLY...\n');
 
-  const [glintsJobs, jobstreetJobs, wwrJobs, remotiveJobs, socialRssJobs, indonesiaRssJobs] = await Promise.allSettled([
+  const [glintsJobs, jobstreetJobs, wwrJobs, remotiveJobs, socialRssJobs, indonesiaRssJobs, localItJobs] = await Promise.allSettled([
     fetchGlintsJobs(),
     fetchJobStreetJobs(),
     fetchWeWorkRemotelyJobs(),
     fetchRemotiveJobs(),
     fetchSocialRssJobs(),
-    fetchIndonesiaJobRssJobs()
+    fetchIndonesiaJobRssJobs(),
+    fetchLocalItJobs()
   ]);
 
   const allJobs = [
@@ -637,7 +721,8 @@ export async function fetchAllJobSources(): Promise<JobPosting[]> {
     ...(wwrJobs.status === 'fulfilled' ? wwrJobs.value : []),
     ...(remotiveJobs.status === 'fulfilled' ? remotiveJobs.value : []),
     ...(socialRssJobs.status === 'fulfilled' ? socialRssJobs.value : []),
-    ...(indonesiaRssJobs.status === 'fulfilled' ? indonesiaRssJobs.value : [])
+    ...(indonesiaRssJobs.status === 'fulfilled' ? indonesiaRssJobs.value : []),
+    ...(localItJobs.status === 'fulfilled' ? localItJobs.value : [])
   ];
 
   console.log(`\n✅ Total verified fresh jobs collected (≤${MAX_JOB_AGE_HOURS}h): ${allJobs.length}`);
@@ -647,6 +732,7 @@ export async function fetchAllJobSources(): Promise<JobPosting[]> {
   console.log(`   🌐 Remotive: ${remotiveJobs.status === 'fulfilled' ? remotiveJobs.value.length : 0}`);
   console.log(`   📱 Instagram/Threads RSS: ${socialRssJobs.status === 'fulfilled' ? socialRssJobs.value.length : 0}`);
   console.log(`   🇮🇩 Extra Indonesia job boards RSS: ${indonesiaRssJobs.status === 'fulfilled' ? indonesiaRssJobs.value.length : 0}`);
+  console.log(`   🇮🇩 Local IT boards (Kalibrr/Techinasia/Loker/Karir): ${localItJobs.status === 'fulfilled' ? localItJobs.value.length : 0}`);
   console.log('   ⛔ LinkedIn/Indeed skipped unless reliable timestamp is available.\n');
 
   return allJobs;

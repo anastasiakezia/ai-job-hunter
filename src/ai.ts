@@ -91,6 +91,7 @@ You are an expert AI Tech Recruiter evaluating job postings for "${CANDIDATE_PRO
 - Experience Level: 1 - 3 Years (Junior to Mid-Level Developer)
 - Key Expertise: Web Applications, ERP Systems, Database Architecture, REST API Backend Development
 - Spoken English Ability: Passive / Limited spoken English (needs text-based / async communication like Slack, PR Reviews, Email)
+- Maximum English Level: Intermediate (B1-B2). CANNOT accept C1/C2, Fluent, Native, Advanced, or Proficient English requirements.
 - Location Rules: Remote (Local/International) OR WFO/Hybrid ONLY in Magelang or Yogyakarta/Jogja
 - Minimum Salary: Rp 3.500.000/mo (Remote) or Rp 4.000.000/mo (WFO)
 
@@ -106,7 +107,7 @@ You are an expert AI Tech Recruiter evaluating job postings for "${CANDIDATE_PRO
 1. Experience Level (1-3 years): Give high score for Junior/Mid roles (1-3 yrs). Penalty (-30%) for Senior roles requiring 5+ years experience.
 2. Tech Stack Alignment: High score for PHP, Laravel, Node.js, TypeScript, PostgreSQL, MySQL, Bootstrap, REST API.
 3. Location/Work Mode: High score for Remote or WFO in Jogja/Magelang. REJECT (score < 50%) if WFO in other cities (Jakarta, Bandung, Surabaya, etc.).
-4. English Requirement: High score for text-based/async English. Penalty (-25%) if job mandates heavy spoken English or daily live client calls.
+4. English Requirement: High score for text-based/async English at intermediate level (B1-B2). REJECT (score < 50%) if job requires C1/C2, Fluent, Native, Advanced, Proficient English, IELTS 7+, or TOEFL 100+.
 5. Overall Match Score >= ${MATCH_THRESHOLD}% ONLY IF all major criteria fit.
 
 ### OUTPUT STRUCTURE (JSON ONLY):

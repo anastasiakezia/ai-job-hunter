@@ -1,5 +1,5 @@
 ﻿import axios from 'axios';
-import { CANDIDATE_PROFILE, MAX_JOB_AGE_HOURS } from './config';
+import { CANDIDATE_PROFILE, MAX_JOB_AGE_HOURS, ENGLISH_LEVEL_REJECT_KEYWORDS } from './config';
 
 export interface JobPosting {
   id: string;
@@ -144,6 +144,14 @@ function isRelevantJob(job: any): boolean {
         }
       }
     }
+  }
+
+  // FILTER 5: English Level Filter (Reject C1/C2/Advanced/Fluent/Native requirements)
+  // Candidate is intermediate (~B1/B2) - cannot meet C1+ requirements
+  const englishText = `${title} ${description} ${tags.join(" ")}`.toLowerCase();
+    const highEnglishKeywords = ENGLISH_LEVEL_REJECT_KEYWORDS;
+  if (highEnglishKeywords.some((kw) => englishText.includes(kw))) {
+    return false;
   }
 
   return true;
