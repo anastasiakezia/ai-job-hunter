@@ -639,7 +639,11 @@ function defaultLocalItFeedUrls(): string[] {
     'jobstreet.co.id',
     'jobs.co.id',
     'glassdoor.co.id',
-    'linkedin.com/jobs'
+    'linkedin.com/jobs',
+    'glints.com',
+    'dealls.com',
+    'karir.com',
+    'kitalulus.com'
   ];
   const searchFeeds = sites.flatMap((site) => {
     const kw = encodeURIComponent(keywords + ' ' + site);
