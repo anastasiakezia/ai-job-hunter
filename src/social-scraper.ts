@@ -623,15 +623,29 @@ export async function fetchIndonesiaJobRssJobs(): Promise<JobPosting[]> {
 }
 ﻿/**
  * Default RSS/search URLs for local Indonesian IT job boards: Kalibrr,
- * Tech in Asia, Loker.id, and Karir.id (Google News RSS proxies).
+ * Tech in Asia, Loker.id, Karir.id, JobStreet, Jobs.co.id, Glassdoor,
+ * and LinkedIn (direct RSS + Google News RSS proxies).
  */
 function defaultLocalItFeedUrls(): string[] {
+  const directFeeds = [
+    'https://www.kalibrr.jobs/rss/jobs/technology/'
+  ];
   const keywords = '(backend|fullstack|developer|engineer|laravel|nodejs|typescript|php)';
-  const sites = ['kalibrr.jobs', 'techinasia.com/jobs', 'loker.id', 'karir.id'];
-  return sites.flatMap((site) => {
+  const sites = [
+    'kalibrr.jobs',
+    'techinasia.com/jobs',
+    'loker.id',
+    'karir.id',
+    'jobstreet.co.id',
+    'jobs.co.id',
+    'glassdoor.co.id',
+    'linkedin.com/jobs'
+  ];
+  const searchFeeds = sites.flatMap((site) => {
     const kw = encodeURIComponent(keywords + ' ' + site);
     return `https://news.google.com/rss/search?q=${kw}&hl=id&gl=ID&ceid=ID:id`;
   });
+  return [...directFeeds, ...searchFeeds];
 }
 
 /**
