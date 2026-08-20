@@ -1,8 +1,8 @@
 ﻿import axios from 'axios';
 import * as cheerio from 'cheerio';
 import Parser from 'rss-parser';
-import { JobPosting } from './fetcher';
-import { ENV, MAX_JOB_AGE_HOURS, ENGLISH_LEVEL_REJECT_KEYWORDS } from './config';
+import { JobPosting, requiresExcessiveExperience } from './fetcher';
+import { ENV, MAX_JOB_AGE_HOURS, ENGLISH_LEVEL_REJECT_KEYWORDS, CANDIDATE_PROFILE } from './config';
 
 const rssParser = new Parser();
 const DEFAULT_HEADERS = {
@@ -91,8 +91,7 @@ function isJuniorFriendlyRole(title: string, description: string): boolean {
   if (seniorKeywords.some((kw) => lowerTitle.includes(kw))) return false;
 
   const desc = (description || '').toLowerCase();
-  const highExpMatch = desc.match(/(?:5|6|7|8|10)\+?\s*(?:years|yrs|tahun)\b/i);
-  if (highExpMatch) return false;
+  if (requiresExcessiveExperience(desc)) return false;
 
   // Reject roles requiring C1/C2/Fluent/Native/Advanced English (candidate is intermediate B1/B2)
   const englishText = (lowerTitle + " " + desc).toLowerCase();
@@ -209,7 +208,7 @@ async function fetchGlintsHtmlJobs(keyword: string): Promise<JobPosting[]> {
       if (!isAllowedLocation(location, isRemote)) continue;
       
       const minExp = job.minYearsOfExperience || 0;
-      if (minExp >= 5 || !isJuniorFriendlyRole(title, `${title} ${minExp} years experience`)) continue;
+      if (minExp > CANDIDATE_PROFILE.experienceYears.max || !isJuniorFriendlyRole(title, `${title} ${minExp} years experience`)) continue;
 
       const jobUrl = `https://glints.com/id/opportunities/jobs/${job.id}`;
       jobs.push({

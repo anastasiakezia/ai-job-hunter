@@ -29,6 +29,51 @@ function stripHtml(html: string): string {
 }
 
 /**
+ * Extract the minimum and maximum required years of experience mentioned in a
+ * job title or description. Returns null when no explicit years requirement is
+ * found. Handles "5 years", "4+ years", "4-5 years", "3 to 5 years", "5 tahun".
+ * A range like "3-5 years" is returned as { min: 3, max: 5 }.
+ */
+export function extractMinRequiredYears(text: string): { min: number | null; max: number | null } | null {
+  if (!text) return null;
+  const normalized = text.toLowerCase();
+  const yearsRegex = /(\d{1,2})(?:\s*\+)?(?:\s*[-to]+\s*(\d{1,2}))?\s*(?:years?|yrs?|tahun)\b/g;
+  let match: RegExpExecArray | null = null;
+  let minYears: number | null = null;
+  let maxYears: number | null = null;
+  while ((match = yearsRegex.exec(normalized)) !== null) {
+    const first = Number(match[1]);
+    if (!Number.isNaN(first)) {
+      if (minYears === null || first < minYears) minYears = first;
+      if (match[2] !== undefined) {
+        const second = Number(match[2]);
+        if (!Number.isNaN(second)) {
+          if (maxYears === null || second > maxYears) maxYears = second;
+        }
+      } else {
+        if (maxYears === null) maxYears = first;
+      }
+    }
+  }
+  return { min: minYears, max: maxYears };
+}
+
+/**
+ * Reject roles that require more experience than the candidate max target
+ * (1-3 years). Checks both explicit minimums and range upper bounds, so
+ * "3-5 years", "4 years", and "4-5 years" are all rejected.
+ */
+export function requiresExcessiveExperience(text: string): boolean {
+  const extracted = extractMinRequiredYears(text);
+  if (extracted === null) return false;
+  const minRequired = extracted.min;
+  const maxRequired = extracted.max;
+  if (minRequired === null || maxRequired === null) return false;
+  return minRequired > CANDIDATE_PROFILE.experienceYears.max ||
+         maxRequired > CANDIDATE_PROFILE.experienceYears.max;
+}
+
+/**
  * Check if job was posted within last N hours
  */
 function isJobRecent(jobDate: string, maxHours: number = MAX_JOB_AGE_HOURS): boolean {
@@ -76,6 +121,12 @@ function isRelevantJob(job: any): boolean {
   // FILTER 2.5: Seniority check (candidate target: Junior to Mid, 1-3 years)
   const seniorRoleKeywords = ['senior', 'sr.', 'sr ', 'lead ', 'lead developer', 'lead engineer', 'principal', 'architect', 'head of', 'staff developer', 'staff engineer'];
   if (seniorRoleKeywords.some((kw) => title.includes(kw))) {
+    return false;
+  }
+
+  // FILTER 2.6: Experience gate - reject roles requiring more than candidate max (1-3 years)
+  // Catches "4 years", "4-5 years", "4+ years" even without "senior" in the title.
+  if (requiresExcessiveExperience(description)) {
     return false;
   }
 

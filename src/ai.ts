@@ -1,7 +1,7 @@
 ﻿import { GoogleGenAI } from '@google/genai';
 import OpenAI from 'openai';
 import { CANDIDATE_PROFILE, ENV, MATCH_THRESHOLD } from './config';
-import { JobPosting } from './fetcher';
+import { JobPosting, requiresExcessiveExperience } from './fetcher';
 
 export interface AIAnalysisResult {
   matchScore: number;
@@ -23,7 +23,7 @@ function generateMockAnalysis(job: JobPosting): AIAnalysisResult {
 
   // Check if job requires Senior / Lead level (5+ years experience)
   const isSenior = ['senior', 'sr.', 'sr ', 'lead', 'principal', 'architect', 'head of', 'staff developer', 'staff engineer'].some((kw) => title.includes(kw));
-  const requiresHighExp = /(?:5\+?|6\+?|7\+?|8\+?|10\+?)\s*(?:years|yrs|tahun)/i.test(desc);
+  const requiresHighExp = requiresExcessiveExperience(desc);
 
   if (isSenior || requiresHighExp) {
     return {
@@ -33,7 +33,7 @@ function generateMockAnalysis(job: JobPosting): AIAnalysisResult {
         ? 'Hybrid (Yogyakarta/Magelang)'
         : 'Remote (Internasional)',
       reasons: [
-        'Requires senior-level experience (5+ years), exceeding candidate level (1-3 years).'
+        'Requires senior-level experience (> 3 years), exceeding candidate level (1-3 years).'
       ],
       coverLetter: '',
       quickChatTemplate: '',
@@ -104,7 +104,7 @@ You are an expert AI Tech Recruiter evaluating job postings for "${CANDIDATE_PRO
 - Description: ${job.description.slice(0, 2000)}
 
 ### SCORING RULES (Match Score: 0-100%):
-1. Experience Level (1-3 years): Give high score for Junior/Mid roles (1-3 yrs). Penalty (-30%) for Senior roles requiring 5+ years experience.
+1. Experience Level (1-3 years): Give high score for Junior/Mid roles (1-3 yrs). REJECT (score < 50%) if the role requires more than 3 years (e.g. 4 years, 4-5 years, 5+ years, "Senior"/"Lead").
 2. Tech Stack Alignment: High score for PHP, Laravel, Node.js, TypeScript, PostgreSQL, MySQL, Bootstrap, REST API.
 3. Location/Work Mode: High score for Remote or WFO in Jogja/Magelang. REJECT (score < 50%) if WFO in other cities (Jakarta, Bandung, Surabaya, etc.).
 4. English Requirement: High score for text-based/async English at intermediate level (B1-B2). REJECT (score < 50%) if job requires C1/C2, Fluent, Native, Advanced, Proficient English, IELTS 7+, or TOEFL 100+.
