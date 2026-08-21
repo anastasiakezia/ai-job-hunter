@@ -114,7 +114,7 @@ function getAllowedTextLocation(value: string): string | null {
   if (/remote|wfh|work from home|work-from-home/i.test(text)) return 'Remote / WFH';
   if (/yogyakarta|jogja/i.test(text)) return 'Yogyakarta / Jogja';
   if (/magelang/i.test(text)) return 'Magelang';
-  return null;
+  return 'Remote / Indonesia';
 }
 function errorSummary(error: any): string {
   const status = error?.response?.status;
@@ -473,10 +473,13 @@ export async function fetchRemotiveJobs(): Promise<JobPosting[]> {
 }
 
 function defaultSocialFeedUrls(): string[] {
-  const query = '(loker OR lowongan OR hiring) (backend OR fullstack OR laravel OR nodejs OR php OR typescript) (remote OR wfh OR jogja OR yogyakarta OR magelang)';
+  const query = "(backend OR fullstack OR laravel OR nodejs OR php OR typescript OR developer OR engineer OR programmer OR loker OR lowongan OR hiring OR dicari OR butuh)";
   return [
     `https://news.google.com/rss/search?q=${encodeURIComponent(`${query} site:instagram.com`)}&hl=id&gl=ID&ceid=ID:id`,
-    `https://news.google.com/rss/search?q=${encodeURIComponent(`${query} site:threads.net OR site:threads.com`)}&hl=id&gl=ID&ceid=ID:id`
+    `https://news.google.com/rss/search?q=${encodeURIComponent(`${query} site:threads.net OR site:threads.com`)}&hl=id&gl=ID&ceid=ID:id`,
+    `https://news.google.com/rss/search?q=${encodeURIComponent(`site:threads.net/@lokerjogja.id`)}&hl=id&gl=ID&ceid=ID:id`,
+    `https://news.google.com/rss/search?q=${encodeURIComponent(`site:threads.net/@loker.id`)}&hl=id&gl=ID&ceid=ID:id`,
+    `https://news.google.com/rss/search?q=${encodeURIComponent(`site:threads.net/@dealls.jobs`)}&hl=id&gl=ID&ceid=ID:id`
   ];
 }
 
@@ -633,8 +636,7 @@ function defaultLocalItFeedUrls(): string[] {
   const sites = [
     'kalibrr.jobs',
     'techinasia.com/jobs',
-    'loker.id',
-    'karir.id',
+    'loker.id', 'lokerjogja.id', 'karir.id',
     'jobstreet.co.id',
     'jobs.co.id',
     'glassdoor.co.id',
@@ -754,6 +756,8 @@ export async function fetchAllJobSources(): Promise<JobPosting[]> {
 
   return allJobs;
 }
+
+
 
 
 
