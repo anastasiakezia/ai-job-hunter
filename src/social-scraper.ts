@@ -733,7 +733,7 @@ export async function fetchLinkedInJobs(): Promise<JobPosting[]> {
   return [];
 }
 
-export async function fetchAllJobSources(): Promise<JobPosting[]> {
+export async function fetchAllJobSources(isFastRun: boolean = true): Promise<JobPosting[]> {
   console.log('\n📱 SCRAPING VERIFIED-DATE JOB SOURCES ONLY...\n');
 
   const [glintsJobs, jobstreetJobs, wwrJobs, remotiveJobs, socialRssJobs, indonesiaRssJobs, localItJobs] = await Promise.allSettled([
