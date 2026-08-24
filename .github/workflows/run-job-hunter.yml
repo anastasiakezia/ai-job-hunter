@@ -1,4 +1,4 @@
-﻿name: AI Job Hunter
+name: AI Job Hunter
 
 on:
   schedule:
@@ -20,6 +20,10 @@ on:
 jobs:
   run-job-hunter:
     runs-on: windows-latest
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     
     steps:
     - uses: actions/checkout@v4
