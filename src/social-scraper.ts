@@ -500,6 +500,7 @@ export async function fetchSocialRssJobs(): Promise<JobPosting[]> {
   }
 
   for (const feedUrl of feedUrls) {
+    await new Promise((r) => setTimeout(r, 4000));
     try {
       const feed = await rssParser.parseURL(feedUrl);
       const sourceName = feed.title || new URL(feedUrl).hostname;
@@ -577,6 +578,7 @@ export async function fetchIndonesiaJobRssJobs(): Promise<JobPosting[]> {
   }
 
   for (const feedUrl of feedUrls) {
+    await new Promise((r) => setTimeout(r, 4000));
     try {
       const feed = await rssParser.parseURL(feedUrl);
       const sourceName = feed.title || new URL(feedUrl).hostname;
@@ -680,6 +682,7 @@ export async function fetchLocalItJobs(): Promise<JobPosting[]> {
   }
 
   for (const feedUrl of feedUrls) {
+    await new Promise((r) => setTimeout(r, 4000));
     try {
       const feed = await rssParser.parseURL(feedUrl);
       const sourceName = feed.title || new URL(feedUrl).hostname;
