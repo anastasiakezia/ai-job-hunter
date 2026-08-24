@@ -18,8 +18,8 @@ on:
           - extended
 
 jobs:
-  job-hunter:
-    runs-on: windows-10-xl
+  run-job-hunter:
+    runs-on: windows-latest
     
     steps:
     - uses: actions/checkout@v4
