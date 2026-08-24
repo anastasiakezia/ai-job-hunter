@@ -9,7 +9,7 @@ const DEFAULT_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 AIJobHunter/1.0',
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,application/json;q=0.8,*/*;q=0.7'
 };
-const LOCAL_KEYWORDS = ['backend', 'fullstack', 'nodejs', 'laravel', 'php', 'typescript'];
+const LOCAL_KEYWORDS = ['backend', 'fullstack', 'nodejs', 'laravel', 'php', 'typescript', 'mysql', 'postgresql', 'bootstrap', 'html', 'css'];
 
 function parseList(value: string | undefined): string[] {
   return (value || '')
@@ -105,7 +105,8 @@ function isJuniorFriendlyRole(title: string, description: string): boolean {
 function isRelevantText(value: string): boolean {
   const text = value.toLowerCase();
   const hasJobSignal = ['loker', 'lowongan', 'hiring', 'job', 'jobs', 'career', 'karir', 'dibutuhkan', 'opportunity', 'opportunities', 'developer', 'engineer'].some((keyword) => text.includes(keyword));
-  const hasTechSignal = ['backend', 'back-end', 'fullstack', 'full stack', 'full-stack', 'developer', 'engineer', 'programmer', 'laravel', 'php', 'node', 'nodejs', 'typescript', 'javascript', 'software'].some((keyword) => text.includes(keyword));
+  const hasTechSignal = ['backend', 'back-end', 'fullstack', 'full stack', 'full-stack', 'developer', 'engineer', 'programmer', 'laravel', 'php', 'node', 'nodejs', 'typescript', 'javascript', 'software', 'mysql', 'postgresql', 'postgres', 'html', 'css', 'bootstrap'].some((keyword) => text.includes(keyword));
+  if (['koki', 'sales', 'operator', 'jahit', 'admin', 'driver', 'nurse', 'cleaner', 'kasir'].some((kw) => text.includes(kw))) return false;
   return hasJobSignal && hasTechSignal;
 }
 
@@ -591,6 +592,14 @@ export async function fetchIndonesiaJobRssJobs(): Promise<JobPosting[]> {
         const link = item.link || feedUrl;
         let company = 'Indonesia Job Board';
         if (/glints\.com/i.test(link) || /glints/i.test(sourceName)) company = 'Glints';
+        else if (/jobstreet\.co\.id/i.test(link) || /jobstreet/i.test(sourceName)) company = 'JobStreet';
+        else if (/dealls\.com/i.test(link) || /dealls/i.test(sourceName)) company = 'Dealls';
+        else if (/kitalulus\.com/i.test(link) || /kitalulus/i.test(sourceName)) company = 'KitaLulus';
+        else if (/kalibrr\.com/i.test(link) || /kalibrr/i.test(sourceName)) company = 'Kalibrr';
+        else if (/techinasia\.com/i.test(link) || /tech in asia/i.test(sourceName)) company = 'Tech in Asia';
+        else if (/loker\.id/i.test(link) || /loker/i.test(sourceName)) company = 'Loker.id';
+        else if (/karir\.com/i.test(link) || /karir/i.test(sourceName)) company = 'Karir.com';
+        else if (/lokerjogja\.id/i.test(link) || /lokerjogja/i.test(sourceName)) company = 'Loker Jogja';
         else if (/jobstreet\.co\.id/i.test(link) || /jobstreet/i.test(sourceName)) company = 'JobStreet';
         else if (/kalibrr\.com/i.test(link) || /kalibrr/i.test(sourceName)) company = 'Kalibrr';
         else if (/dealls\.com/i.test(link) || /dealls/i.test(sourceName)) company = 'Dealls';
