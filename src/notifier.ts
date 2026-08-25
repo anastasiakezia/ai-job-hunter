@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 import { ENV } from "./config";
 import { JobPosting } from "./fetcher";
 import { AIAnalysisResult } from "./ai";
@@ -6,25 +6,60 @@ import * as fs from "fs";
 import * as path from "path";
 import { isJobAlreadySent, markAsSent } from "./sent-jobs-store";
 
+function escapeHtml(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+export function buildNotificationHtml(job: JobPosting, analysis: AIAnalysisResult): string {
+  const reasonsText = analysis.reasons.map((r) => `• ${escapeHtml(r.trim())}`).join("\n");
+  const applyLink = escapeHtml(job.applyUrl || job.url);
+  const position = escapeHtml(job.position);
+  const company = escapeHtml(job.company);
+  const workMode = escapeHtml(analysis.workMode);
+  const coverLetter = escapeHtml(analysis.coverLetter);
+  const quickChat = escapeHtml(analysis.quickChatTemplate);
+
+  return `🎯 <b>LOKER RELEVAN DITEMUKAN!</b>
+
+💼 <b>Posisi</b>: ${position}
+🏢 <b>Perusahaan</b>: ${company}
+📍 <b>Mode Kerja</b>: ${workMode}
+📊 <b>Match Score</b>: ${analysis.matchScore}%
+🔗 <b>Link Lamaran</b>: <a href="${applyLink}">${applyLink}</a>
+
+✨ <b>Alasan Cocok</b>:
+${reasonsText}
+
+📝 <b>Draf Cover Letter</b>:
+<code>${coverLetter}</code>
+
+💬 <b>Template Chat Pertama ke Recruiter</b>:
+<code>${quickChat}</code>`;
+}
+
 export function buildNotificationMessage(job: JobPosting, analysis: AIAnalysisResult): string {
   const reasonsText = analysis.reasons.map((r) => `• ${r.trim()}`).join("\n");
   const applyLink = job.applyUrl || job.url;
 
-  return `🎯 *LOKER RELEVAN DITEMUKAN!*
+  return `🎯 LOKER RELEVAN DITEMUKAN!
 
-💼 *Posisi*: ${job.position}
-🏢 *Perusahaan*: ${job.company}
-📍 *Mode Kerja*: ${analysis.workMode}
-📊 *Match Score*: ${analysis.matchScore}%
-🔗 *Link Lamaran*: ${applyLink}
+💼 Posisi: ${job.position}
+🏢 Perusahaan: ${job.company}
+📍 Mode Kerja: ${analysis.workMode}
+📊 Match Score: ${analysis.matchScore}%
+🔗 Link Lamaran: ${applyLink}
 
-✨ *Alasan Cocok*:
+✨ Alasan Cocok:
 ${reasonsText}
 
-📝 *Draf Cover Letter*:
+📝 Draf Cover Letter:
 ${analysis.coverLetter}
 
-💬 *Template Chat Pertama ke Recruiter*:
+💬 Template Chat Pertama ke Recruiter:
 ${analysis.quickChatTemplate}
 `;
 }
@@ -58,7 +93,8 @@ export async function sendTelegramNotification(
     return false;
   }
 
-  const message = buildNotificationMessage(job, analysis);
+  const plainMessage = buildNotificationMessage(job, analysis);
+  const htmlMessage = buildNotificationHtml(job, analysis);
 
   saveToLocalFile(job, analysis);
 
@@ -66,7 +102,7 @@ export async function sendTelegramNotification(
     console.log("\n======================================================");
     console.log("📢 [CONSOLE OUTPUT - TELEGRAM NOT CONFIGURED]");
     console.log("======================================================");
-    console.log(message);
+    console.log(plainMessage);
     console.log("======================================================\n");
     markAsSent(job.company || "unknown", job.position, job.url);
     return false;
@@ -76,12 +112,13 @@ export async function sendTelegramNotification(
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
+      // 1. Try sending with HTML formatting
       const response = await axios.post(
         telegramUrl,
         {
           chat_id: ENV.TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: "Markdown",
+          text: htmlMessage,
+          parse_mode: "HTML",
           disable_web_page_preview: false,
         },
         {
@@ -95,7 +132,25 @@ export async function sendTelegramNotification(
         markAsSent(job.company || "unknown", job.position, job.url);
         return true;
       } else {
-        console.error(`   ⚠️ Telegram API returned error:`, response.data);
+        console.warn(`   ⚠️ HTML send failed (${JSON.stringify(response.data?.description || response.data)}), retrying with plain text...`);
+        // Fallback retry immediately with plain text without parse_mode
+        const fallbackResponse = await axios.post(
+          telegramUrl,
+          {
+            chat_id: ENV.TELEGRAM_CHAT_ID,
+            text: plainMessage,
+            disable_web_page_preview: false,
+          },
+          {
+            timeout: 10000,
+          }
+        );
+
+        if (fallbackResponse.status === 200 && fallbackResponse.data?.ok) {
+          console.log(`   ✅ Telegram notification sent successfully (plain text)!`);
+          markAsSent(job.company || "unknown", job.position, job.url);
+          return true;
+        }
       }
     } catch (error: any) {
       if (attempt === 2) {
@@ -110,7 +165,7 @@ export async function sendTelegramNotification(
   console.log("\n======================================================");
   console.log("📢 [FALLBACK - PRINTED TO CONSOLE]");
   console.log("======================================================");
-  console.log(message);
+  console.log(plainMessage);
   console.log("======================================================\n");
 
   markAsSent(job.company || "unknown", job.position, job.url);

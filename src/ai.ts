@@ -1,4 +1,4 @@
-﻿import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import OpenAI from 'openai';
 import { CANDIDATE_PROFILE, ENV, MATCH_THRESHOLD } from './config';
 import { JobPosting, requiresExcessiveExperience } from './fetcher';
@@ -145,7 +145,8 @@ export async function analyzeJobPosting(job: JobPosting): Promise<AIAnalysisResu
       const prompt = buildPrompt(job);
 
       const modelsToTry = [
-        'gemini-2.0-flash-exp',
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
         'gemini-1.5-flash',
         'gemini-1.5-pro'
       ];
