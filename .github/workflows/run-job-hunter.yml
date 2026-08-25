@@ -1,11 +1,11 @@
-name: AI Job Hunter
+﻿name: AI Job Hunter
 
 on:
   schedule:
     # Fast run every 4 hours
-    - cron: '*/240 * * * *'
-    # Extended run daily at 06:00 UTC (catch everything else)
-    - cron: '0 6 * * *'
+    - cron: '0 */4 * * *'
+    # Extended run every 12 hours
+    - cron: '0 */12 * * *'
   workflow_dispatch:
     inputs:
       mode:
@@ -38,11 +38,11 @@ jobs:
       run: npm ci
     
     - name: Run Job Hunter (Fast Mode)
-      if: github.event_name == 'schedule' && github.event.schedule != '0 6 * * *' || github.event.inputs.mode == 'fast'
+      if: github.event_name == 'schedule' && github.event.schedule != '0 */12 * * *' || github.event.inputs.mode == 'fast'
       run: npx ts-node src/index.ts
     
     - name: Run Job Hunter (Extended Mode)
-      if: github.event_name == 'schedule' && github.event.schedule == '0 6 * * *' || github.event.inputs.mode == 'extended'
+      if: github.event_name == 'schedule' && github.event.schedule == '0 */12 * * *' || github.event.inputs.mode == 'extended'
       run: npx ts-node src/index.ts --extended
     
     - name: Commit logs
