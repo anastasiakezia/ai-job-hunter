@@ -1,5 +1,5 @@
-﻿import axios from 'axios';
-import { CANDIDATE_PROFILE, MAX_JOB_AGE_HOURS, ENGLISH_LEVEL_REJECT_KEYWORDS } from './config';
+import axios from 'axios';
+import { CANDIDATE_PROFILE, MAX_JOB_AGE_HOURS, ENGLISH_LEVEL_REJECT_KEYWORDS, NON_TECH_REJECT_KEYWORDS, TECH_ROLE_KEYWORDS } from './config';
 
 export interface JobPosting {
   id: string;
@@ -106,15 +106,8 @@ function isRelevantJob(job: any): boolean {
     return false;
   }
 
-  // FILTER 2: Non-software / irrelevant role exclusions
-  const nonTechKeywords = [
-    'labourer', 'laborer', 'estimator', 'smash repairs', 'driver',
-    'nurse', 'accountant', 'recruiter', 'receptionist', 
-    'sales representative', 'customer service', 'cleaner', 'chef', 'mechanic',
-    'marketing', 'designer', 'content writer', 'copywriter'
-  ];
-
-  if (nonTechKeywords.some((ex) => title.includes(ex))) {
+  // FILTER 2: Non-software / irrelevant role exclusions (comprehensive blacklist)
+  if (NON_TECH_REJECT_KEYWORDS.some((kw) => title.includes(kw) || description.includes(kw))) {
     return false;
   }
 
@@ -125,37 +118,16 @@ function isRelevantJob(job: any): boolean {
   }
 
   // FILTER 2.6: Experience gate - reject roles requiring more than candidate max (1-3 years)
-  // Catches "4 years", "4-5 years", "4+ years" even without "senior" in the title.
   if (requiresExcessiveExperience(description)) {
     return false;
   }
 
-  // FILTER 3: Strict role matching - target roles or tech stack
-  const titleAndTags = `${title} ${tags.join(' ')}`;
+  // FILTER 3: Strict tech role title and stack matching
+  const hasTechRoleInTitle = TECH_ROLE_KEYWORDS.some((kw) => title.includes(kw));
+  const hasTechRoleInDesc = TECH_ROLE_KEYWORDS.some((kw) => description.includes(kw));
+  const hasTechTags = tags.some((t: string) => TECH_ROLE_KEYWORDS.some((kw) => t.includes(kw)));
 
-  const primaryRoleKeywords = [
-    'fullstack', 'full-stack', 'full stack',
-    'backend', 'back-end', 'back end',
-    'software engineer', 'software developer',
-    'web developer', 'web programmer',
-    'programmer', 'developer',
-    'node', 'nodejs', 'node.js',
-    'typescript', 'javascript',
-    'php', 'laravel'
-  ];
-
-  const secondaryTechKeywords = [
-    'postgresql', 'postgres', 'mysql',
-    'bootstrap', 'html', 'css',
-    'api', 'rest', 'restful',
-    'git', 'github'
-  ];
-
-  const hasPrimaryMatch = primaryRoleKeywords.some((kw) => titleAndTags.includes(kw));
-  const hasSecondaryMatch = secondaryTechKeywords.some((kw) => titleAndTags.includes(kw));
-  const hasDescMatch = primaryRoleKeywords.some((kw) => description.includes(kw));
-
-  if (!hasPrimaryMatch && !(hasSecondaryMatch && hasDescMatch)) {
+  if (!hasTechRoleInTitle && !(hasTechTags && hasTechRoleInDesc)) {
     return false;
   }
 

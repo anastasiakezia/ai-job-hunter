@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import OpenAI from 'openai';
-import { CANDIDATE_PROFILE, ENV, MATCH_THRESHOLD } from './config';
+import { CANDIDATE_PROFILE, ENV, MATCH_THRESHOLD, NON_TECH_REJECT_KEYWORDS, TECH_ROLE_KEYWORDS } from './config';
 import { JobPosting, requiresExcessiveExperience } from './fetcher';
 
 export interface AIAnalysisResult {
@@ -18,10 +18,31 @@ export interface AIAnalysisResult {
  * Fallback mock generator for demonstration when API keys are missing or in DEMO_MODE
  */
 function generateMockAnalysis(job: JobPosting): AIAnalysisResult {
-  const title = job.position.toLowerCase();
+  const title = (job.position || '').toLowerCase();
   const desc = (job.description || '').toLowerCase();
+  const fullText = `${title} ${desc} ${job.tags.join(' ')}`;
 
-  // Check if job requires Senior / Lead level (5+ years experience)
+  // 1. Mandatory Non-Tech / General Job Rejection
+  const isNonTech = NON_TECH_REJECT_KEYWORDS.some((kw) => title.includes(kw) || desc.includes(kw));
+  const hasTechRole = TECH_ROLE_KEYWORDS.some((kw) => title.includes(kw)) ||
+                      (['developer', 'engineer', 'programmer', 'it', 'software', 'backend', 'fullstack'].some((kw) => title.includes(kw)) && ['laravel', 'php', 'node', 'typescript', 'sql', 'web'].some((kw) => fullText.includes(kw)));
+
+  if (isNonTech || !hasTechRole) {
+    return {
+      matchScore: 10,
+      isMatch: false,
+      workMode: 'N/A',
+      reasons: [
+        'Job position is not a Software Engineering / IT Web Development role.'
+      ],
+      coverLetter: '',
+      quickChatTemplate: '',
+      salaryEvaluation: 'Not evaluated (non-tech role)',
+      englishNotes: 'Not evaluated'
+    };
+  }
+
+  // 2. Check if job requires Senior / Lead level (5+ years experience)
   const isSenior = ['senior', 'sr.', 'sr ', 'lead', 'principal', 'architect', 'head of', 'staff developer', 'staff engineer'].some((kw) => title.includes(kw));
   const requiresHighExp = requiresExcessiveExperience(desc);
 
@@ -104,6 +125,7 @@ You are an expert AI Tech Recruiter evaluating job postings for "${CANDIDATE_PRO
 - Description: ${job.description.slice(0, 2000)}
 
 ### SCORING RULES (Match Score: 0-100%):
+0. Mandatory Tech Role Check: MUST be a software development / IT engineering role (Backend, Fullstack, Web Developer, Software Engineer, Laravel, Node.js, etc.). If the role is non-IT, government/civil service/public vacancy (e.g. Haji, CPNS, Guru, Medis, Sales, Driver, etc.), REJECT IMMEDIATELY with matchScore = 0.
 1. Experience Level (1-3 years): Give high score for Junior/Mid roles (1-3 yrs). REJECT (score < 50%) if the role requires more than 3 years (e.g. 4 years, 4-5 years, 5+ years, "Senior"/"Lead").
 2. Tech Stack Alignment: High score for PHP, Laravel, Node.js, TypeScript, PostgreSQL, MySQL, Bootstrap, REST API.
 3. Location/Work Mode: High score for Remote or WFO in Jogja/Magelang. REJECT (score < 50%) if WFO in other cities (Jakarta, Bandung, Surabaya, etc.).

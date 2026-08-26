@@ -1,8 +1,8 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import * as cheerio from 'cheerio';
 import Parser from 'rss-parser';
 import { JobPosting, requiresExcessiveExperience } from './fetcher';
-import { ENV, MAX_JOB_AGE_HOURS, ENGLISH_LEVEL_REJECT_KEYWORDS, CANDIDATE_PROFILE } from './config';
+import { ENV, MAX_JOB_AGE_HOURS, ENGLISH_LEVEL_REJECT_KEYWORDS, CANDIDATE_PROFILE, NON_TECH_REJECT_KEYWORDS, TECH_ROLE_KEYWORDS } from './config';
 
 const rssParser = new Parser();
 const DEFAULT_HEADERS = {
@@ -87,10 +87,16 @@ function isAllowedLocation(locationValue: unknown, isRemoteValue?: boolean): boo
  */
 function isJuniorFriendlyRole(title: string, description: string): boolean {
   const lowerTitle = (title || '').toLowerCase();
+  const desc = (description || '').toLowerCase();
+
+  // Reject non-tech blacklist
+  if (NON_TECH_REJECT_KEYWORDS.some((kw) => lowerTitle.includes(kw) || desc.includes(kw))) {
+    return false;
+  }
+
   const seniorKeywords = ['senior', 'sr.', 'sr ', 'lead ', 'lead developer', 'lead engineer', 'principal', 'architect', 'head of', 'staff developer', 'staff engineer'];
   if (seniorKeywords.some((kw) => lowerTitle.includes(kw))) return false;
 
-  const desc = (description || '').toLowerCase();
   if (requiresExcessiveExperience(desc)) return false;
 
   // Reject roles requiring C1/C2/Fluent/Native/Advanced English (candidate is intermediate B1/B2)
@@ -102,12 +108,28 @@ function isJuniorFriendlyRole(title: string, description: string): boolean {
   return true;
 }
 
-function isRelevantText(value: string): boolean {
+function isRelevantText(value: string, title?: string): boolean {
   const text = value.toLowerCase();
-  const hasJobSignal = ['loker', 'lowongan', 'hiring', 'job', 'jobs', 'career', 'karir', 'dibutuhkan', 'opportunity', 'opportunities', 'developer', 'engineer'].some((keyword) => text.includes(keyword));
-  const hasTechSignal = ['backend', 'back-end', 'fullstack', 'full stack', 'full-stack', 'developer', 'engineer', 'programmer', 'laravel', 'php', 'node', 'nodejs', 'typescript', 'javascript', 'software', 'mysql', 'postgresql', 'postgres', 'html', 'css', 'bootstrap'].some((keyword) => text.includes(keyword));
-  if (['koki', 'sales', 'operator', 'jahit', 'admin', 'driver', 'nurse', 'cleaner', 'kasir'].some((kw) => text.includes(kw))) return false;
-  return hasJobSignal && hasTechSignal;
+  const titleText = (title || '').toLowerCase();
+
+  // 1. Must NOT contain any blacklisted non-tech keywords
+  if (NON_TECH_REJECT_KEYWORDS.some((kw) => text.includes(kw) || titleText.includes(kw))) {
+    return false;
+  }
+
+  // 2. Title must indicate a developer/tech role, or text must contain strong tech keywords
+  const titleHasTech = TECH_ROLE_KEYWORDS.some((kw) => titleText.includes(kw));
+  const textHasTech = TECH_ROLE_KEYWORDS.some((kw) => text.includes(kw));
+
+  const hasJobSignal = ['loker', 'lowongan', 'hiring', 'job', 'jobs', 'career', 'karir', 'dibutuhkan', 'opportunity', 'opportunities', 'developer', 'engineer', 'programmer'].some((keyword) => text.includes(keyword) || titleText.includes(keyword));
+
+  if (titleText) {
+    if (!titleHasTech && !textHasTech) return false;
+  } else {
+    if (!textHasTech) return false;
+  }
+
+  return hasJobSignal;
 }
 
 function getAllowedTextLocation(value: string): string | null {
@@ -474,7 +496,7 @@ export async function fetchRemotiveJobs(): Promise<JobPosting[]> {
 }
 
 function defaultSocialFeedUrls(): string[] {
-  const query = "(backend OR fullstack OR laravel OR nodejs OR php OR typescript OR developer OR engineer OR programmer OR loker OR lowongan OR hiring OR dicari OR butuh)";
+  const query = "(backend OR fullstack OR laravel OR nodejs OR php OR typescript OR 'software engineer' OR 'web developer' OR programmer)";
   return [
     `https://news.google.com/rss/search?q=${encodeURIComponent(`${query} site:instagram.com`)}&hl=id&gl=ID&ceid=ID:id`,
     `https://news.google.com/rss/search?q=${encodeURIComponent(`${query} site:threads.net OR site:threads.com`)}&hl=id&gl=ID&ceid=ID:id`,
@@ -509,7 +531,7 @@ export async function fetchSocialRssJobs(): Promise<JobPosting[]> {
       for (const item of (feed.items || []).slice(0, 20)) {
         const postedDate = getValidRecentIsoDate(item.isoDate || item.pubDate);
         const text = stripHtml(`${item.title || ''} ${item.contentSnippet || ''} ${item.content || ''}`);
-        if (!postedDate || !isRelevantText(text)) continue;
+        if (!postedDate || !isRelevantText(text, item.title)) continue;
         if (!isJuniorFriendlyRole(item.title || '', text)) continue;
 
         const link = item.link || feedUrl;
@@ -588,7 +610,7 @@ export async function fetchIndonesiaJobRssJobs(): Promise<JobPosting[]> {
       for (const item of items.slice(0, 12)) {
         const postedDate = getValidRecentIsoDate(item.isoDate || item.pubDate);
         const text = stripHtml(`${item.title || ''} ${item.contentSnippet || ''} ${item.content || ''}`);
-        if (!postedDate || !isRelevantText(text)) continue;
+        if (!postedDate || !isRelevantText(text, item.title)) continue;
         if (!isJuniorFriendlyRole(item.title || '', text)) continue;
 
         const link = item.link || feedUrl;
@@ -634,7 +656,8 @@ export async function fetchIndonesiaJobRssJobs(): Promise<JobPosting[]> {
 
   return jobs;
 }
-﻿/**
+
+/**
  * Default RSS/search URLs for local Indonesian IT job boards: Kalibrr,
  * Tech in Asia, Loker.id, Karir.id, JobStreet, Jobs.co.id, Glassdoor,
  * and LinkedIn (direct RSS + Google News RSS proxies).
@@ -692,7 +715,7 @@ export async function fetchLocalItJobs(): Promise<JobPosting[]> {
       for (const item of items.slice(0, 12)) {
         const postedDate = getValidRecentIsoDate(item.isoDate || item.pubDate);
         const text = stripHtml(`${item.title || ''} ${item.contentSnippet || ''} ${item.content || ''}`);
-        if (!postedDate || !isRelevantText(text)) continue;
+        if (!postedDate || !isRelevantText(text, item.title)) continue;
         if (!isJuniorFriendlyRole(item.title || '', text)) continue;
 
         const allowedLocation = getAllowedTextLocation(text);

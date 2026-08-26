@@ -1,4 +1,4 @@
-﻿import dotenv from 'dotenv';
+import dotenv from 'dotenv';
 dotenv.config();
 
 export interface CandidateProfile {
@@ -101,6 +101,36 @@ export const ENV = {
 };
 
 
+
+export const NON_TECH_REJECT_KEYWORDS = [
+  // Haji / Keagamaan / Instansi Pemerintah
+  'haji', 'ppih', 'kemenag', 'petugas haji', 'ibadah haji', 'umroh', 'kemenkes',
+  'cpns', 'pns', 'asn', 'pppk', 'bumn', 'tni', 'polri', 'polisi', 'tentara',
+  'kelurahan', 'kecamatan', 'pemda', 'pemprov', 'dinas', 'kementerian',
+  // Non-tech jobs (ID & EN)
+  'guru', 'dosen', 'pengajar', 'tutor', 'ustadz', 'ustadzah',
+  'perawat', 'bidan', 'dokter', 'medis', 'apoteker', 'farmasi', 'laboratorium',
+  'satpam', 'security', 'penjaga', 'cleaning service', 'ob', 'office boy', 'office girl', 'cleaner', 'kebersihan',
+  'koki', 'chef', 'cook', 'barista', 'waiter', 'waitress', 'pelayan', 'kasir', 'cashier', 'pramusaji', 'kitchen',
+  'driver', 'supir', 'sopir', 'kurir', 'courier', 'ojol', 'helper', 'kenek', 'gudang', 'warehouse', 'packer', 'packing',
+  'sales', 'salesman', 'telemarketing', 'marketing executive', 'spg', 'spb', 'promotor', 'account executive',
+  'admin', 'administrasi', 'operator', 'jahit', 'sewing', 'konveksi', 'montir', 'mekanik', 'mechanic', 'teknisi ac', 'teknisi listrik',
+  'estimator', 'smash repairs', 'labourer', 'laborer', 'nurse', 'accountant', 'akuntan', 'finance', 'pajak', 'tax',
+  'receptionist', 'customer service', 'cs', 'call center', 'teller',
+  'content creator', 'content writer', 'copywriter', 'social media specialist', 'seo specialist', 'video editor', 'graphic designer', 'desain grafis'
+];
+
+export const TECH_ROLE_KEYWORDS = [
+  'developer', 'programmer', 'software engineer', 'software development',
+  'backend', 'back-end', 'back end',
+  'fullstack', 'full-stack', 'full stack',
+  'frontend', 'front-end', 'front end',
+  'web developer', 'web programmer',
+  'laravel', 'php', 'node', 'nodejs', 'node.js',
+  'typescript', 'javascript', 'react', 'vue', 'nextjs', 'nest.js', 'nestjs',
+  'golang', 'python', 'java developer', 'golang developer',
+  'rest api', 'api developer', 'database engineer', 'devops', 'system engineer'
+];
 
 export const ENGLISH_LEVEL_REJECT_KEYWORDS = [
   "c1 level",

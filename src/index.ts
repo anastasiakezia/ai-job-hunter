@@ -1,8 +1,9 @@
-﻿import { CANDIDATE_PROFILE, ENV, MATCH_THRESHOLD, MAX_JOB_AGE_HOURS } from './config';
+import { CANDIDATE_PROFILE, ENV, MATCH_THRESHOLD, MAX_JOB_AGE_HOURS } from './config';
 import { fetchJobs, JobPosting } from './fetcher';
 import { fetchAllJobSources } from './social-scraper';
 import { analyzeJobPosting, AIAnalysisResult } from './ai';
 import { sendTelegramNotification } from './notifier';
+import { isJobAlreadySent } from './sent-jobs-store';
 
 /**
  * Filter jobs by recency (posted within last N hours - default 24h)
@@ -92,11 +93,19 @@ async function main() {
     return dateB - dateA;
   });
 
+  // Filter out jobs that were already evaluated & sent in previous runs
+  const unsentJobs = sortedJobs.filter(job => !isJobAlreadySent(job.company || 'unknown', job.position, job.url));
+
+  if (unsentJobs.length === 0) {
+    console.log(`ℹ️ All fresh jobs (${sortedJobs.length}) have already been processed in previous runs.`);
+    return;
+  }
+
   // Limit processing batch size
   const MAX_JOBS_TO_ANALYZE = 20;
-  const jobsToAnalyze = sortedJobs.slice(0, MAX_JOBS_TO_ANALYZE);
+  const jobsToAnalyze = unsentJobs.slice(0, MAX_JOBS_TO_ANALYZE);
 
-  console.log(`🧠 Starting AI Analysis for top ${jobsToAnalyze.length} newest jobs (posted within 24h)...\n`);
+  console.log(`🧠 Starting AI Analysis for top ${jobsToAnalyze.length} newest UNPROCESSED jobs (posted within 24h)...\n`);
 
   let matchedCount = 0;
   let evaluatedCount = 0;
