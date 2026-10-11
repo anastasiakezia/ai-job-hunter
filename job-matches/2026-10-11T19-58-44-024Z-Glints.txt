@@ -1,0 +1,27 @@
+🎯 LOKER RELEVAN DITEMUKAN!
+
+💼 Posisi: Lowongan Full Stack Developer di Sleman Digital Agency - Glints
+🏢 Perusahaan: Glints
+📍 Mode Kerja: Remote (Internasional)
+📊 Match Score: 88%
+🔗 Link Lamaran: https://news.google.com/rss/articles/CBMi-gFBVV95cUxNUXdaeElOZFluaThSRjdqd2Z0ajNTVlBBQ3BUaGR6NjlVcU9rUnNOaVRRc2JNeEduVjFJV1FkLW81blBHdFNvdGN3cFBiY1NKQzJvc0t0LW9XMW9wbV8tY09TT3Vja3NxTHQ2MVdFWjVER3BDUFA5VGxYWkxmdFU5bDFzLVAwdVFyUVU2WWZNb0FuUmY3dzE2YkQ4Yk9KREx6Z1J6b1RGUG95eFBfRy1rMEJXZEM2QUQxSVZQUHhoMjJLanBVR2NiaEJwbHYySEhScVh6NFlfLW8wZncyMnNxUHZUT3RzYVJvRkZ1VFQxbVpGN1hDWWNkMTh3?oc=5
+
+✨ Alasan Cocok:
+• Strong tech stack alignment with candidate's experience in Node.js, TypeScript, PHP/Laravel, and SQL databases.
+• Perfect fit for candidate's experience level of 1-3 years (Junior to Mid-Level Developer).
+• Asynchronous & text-based communication workflow suitable for text-heavy English interaction.
+
+📝 Draf Cover Letter:
+Dear Hiring Team at Glints,
+
+I am writing to express my enthusiasm for the Lowongan Full Stack Developer di Sleman Digital Agency - Glints position. With over 2 years of hands-on experience developing backend services and full-stack web applications using Node.js, TypeScript, PHP (Laravel), and PostgreSQL/MySQL databases, I am confident in my ability to contribute effectively to your engineering team.
+
+In my previous projects, I focused on building reliable REST APIs, database query optimizations, and seamless user-facing features. I thrive in asynchronous, text-driven remote work environments where clear documentation, pull request reviews, and proactive task updates drive project momentum.
+
+I would welcome the opportunity to discuss how my skill set aligns with the needs of Glints. Thank you for considering my application.
+
+Best regards,
+Anastasia Kezia
+
+💬 Template Chat Pertama ke Recruiter:
+Hi there! I came across the Lowongan Full Stack Developer di Sleman Digital Agency - Glints role at Glints and would love to introduce myself. I specialize in Node.js, TypeScript, and PHP/Laravel with 1-3 years of experience. Looking forward to connecting!
